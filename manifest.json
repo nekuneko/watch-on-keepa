@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Watch on Keepa",
   "author": "NeKuNeKo",
-  "version": "1.0",
+  "version": "1.0.1",
   "description": "Unofficial shortcut to check Amazon product price history charts on Keepa via right-click or toolbar button.",
   "icons": {
     "16": "icon.svg",

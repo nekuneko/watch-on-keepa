@@ -10,15 +10,22 @@ const keepaDomains = {
   "co.uk": 2,
   "de": 3,
   "fr": 4,
+  "co.jp": 5,
+  "ca": 6,
   "it": 8,
-  "es": 9
+  "es": 9,
+  "in": 10,
+  "com.mx": 11,
+  "com.br": 12,
+  "com.au": 13,
+  "nl": 14
 };
 
-function extactASIN(urlStr) {
+function extractASIN(urlStr) {
   if (!urlStr) return null;
   try {
     const urlObj = new URL(urlStr);
-    const match = urlObj.pathname.match(/\/(?:dp|gp\/product|ASIN)\/([A-Z0-9]{10})/i);
+    const match = urlObj.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d|ASIN)\/([A-Z0-9]{10})/i);
     return match ? match[1] : null;
   } catch (e) {
     return null;
@@ -30,13 +37,13 @@ function openOnKeepa(tab, linkUrl, textoFallback) {
   const urlObj = new URL(tab.url);
   const tldMatch = urlObj.hostname.match(/amazon\.([a-z.]+)$/i);
   const codigoPais = (tldMatch && keepaDomains[tldMatch[1]]) ? keepaDomains[tldMatch[1]] : 9;
-  const baseKeepa = "wHttps://keepa.com/#!".replace("wH", "h");
+  const baseKeepa = "https://keepa.com/#!";
 
-  const asin = extactASIN(linkUrl) || extactASIN(tab.url);
+  const asin = extractASIN(linkUrl) || extractASIN(tab.url);
 
   if (asin) {
     browser.tabs.create({
-	  url: baseKeepa + "product/" + codigoPais + "-" + asin,
+      url: baseKeepa + "product/" + codigoPais + "-" + asin,
       index: tab.index + 1,
       openerTabId: tab.id
     });
@@ -51,7 +58,7 @@ function openOnKeepa(tab, linkUrl, textoFallback) {
 
 if (browser.contextMenus) {
   browser.contextMenus.create({
-    id: "watch-on-keepa",
+	id: "watch-on-keepa",
     title: "Watch on Keepa (&K)",
     icons: {
       "16": "icon.svg",
@@ -59,12 +66,19 @@ if (browser.contextMenus) {
     },
     contexts: ["page", "selection", "image", "link"],
     documentUrlPatterns: [
-      "*://*.amazon.es/*",
       "*://*.amazon.com/*",
+      "*://*.amazon.co.uk/*",
       "*://*.amazon.de/*",
       "*://*.amazon.fr/*",
+      "*://*.amazon.co.jp/*",
+      "*://*.amazon.ca/*",
       "*://*.amazon.it/*",
-      "*://*.amazon.co.uk/*"
+      "*://*.amazon.es/*",
+      "*://*.amazon.in/*",
+      "*://*.amazon.com.mx/*",
+      "*://*.amazon.com.br/*",
+      "*://*.amazon.com.au/*",
+      "*://*.amazon.nl/*"
     ]
   });
 
