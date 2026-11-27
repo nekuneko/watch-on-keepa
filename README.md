@@ -19,10 +19,11 @@
 - **Works Directly on Links & Thumbnails:** Right-click any product link or image in Amazon search results, carts, or order lists—no need to open the product page first.
 - **One-Click Page Lookup:** Right-click anywhere inside an Amazon product page and select **Watch on Keepa (K)** (or press `K` while the context menu is open), or simply tap the extension icon.
 - **Adjacent Tab Opening:** Opens the Keepa chart right next to your active tab for seamless browsing.
-- **Automatic ASIN & Domain Detection:** Extracts the 10-character ASIN from `/dp/`, `/gp/product/`, or `/ASIN/` URLs and maps the corresponding Keepa country code automatically.
+- **Automatic ASIN & Domain Detection:** Extracts the 10-character ASIN from `/dp/`, `/gp/product/`, `/gp/aw/d/`, or `/ASIN/` URLs and maps the corresponding Keepa country code automatically.
 - **Fallback Text Search:** If triggered without a direct product ASIN in the URL, it searches Keepa using your highlighted text or link text.
-- **Supported Amazon Stores:** `.es`, `.com`, `.co.uk`, `.de`, `.fr`, and `.it`.
+- **Supported Amazon Stores:** `.com`, `.co.uk`, `.de`, `.fr`, `.co.jp`, `.ca`, `.it`, `.es`, `.in`, `.com.mx`, `.com.br`, `.com.au`, and `.nl` (all Keepa-supported locales).
 - **Zero Bloat:** No trackers, no content scripts injecting into Amazon, and no account required.
+
 
 ## Screenshots
 
