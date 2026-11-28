@@ -21,74 +21,92 @@ const keepaDomains = {
   "nl": 14
 };
 
+const amazonPatterns = Object.keys(keepaDomains).map(
+  (tld) => "*://*.amazon." + tld + "/*"
+);
+
 function extractASIN(urlStr) {
   if (!urlStr) return null;
   try {
     const urlObj = new URL(urlStr);
-    const match = urlObj.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d|ASIN)\/([A-Z0-9]{10})/i);
-    return match ? match[1] : null;
+    const match = urlObj.pathname.match(
+      /\/(?:dp|gp\/product|gp\/aw\/d|gp\/offer-listing|d|ASIN)\/([A-Z0-9]{10})(?:\/|$|\?)/i
+    );
+    return match ? match[1].toUpperCase() : null;
   } catch (e) {
     return null;
   }
 }
 
-function openOnKeepa(tab, linkUrl, textoFallback) {
-  if (!tab || !tab.url) return;
-  const urlObj = new URL(tab.url);
-  const tldMatch = urlObj.hostname.match(/amazon\.([a-z.]+)$/i);
-  const codigoPais = (tldMatch && keepaDomains[tldMatch[1]]) ? keepaDomains[tldMatch[1]] : 9;
-  const baseKeepa = "https://keepa.com/#!";
-
-  const asin = extractASIN(linkUrl) || extractASIN(tab.url);
-
-  if (asin) {
-    browser.tabs.create({
-      url: baseKeepa + "product/" + codigoPais + "-" + asin,
-      index: tab.index + 1,
-      openerTabId: tab.id
-    });
-  } else if (textoFallback) {
-    browser.tabs.create({
-      url: baseKeepa + "search/" + codigoPais + "-" + encodeURIComponent(textoFallback),
-      index: tab.index + 1,
-      openerTabId: tab.id
-    });
+function getCountryCode(urlStr) {
+  if (!urlStr) return 9;
+  try {
+    const urlObj = new URL(urlStr);
+    const tldMatch = urlObj.hostname.match(/amazon\.([a-z.]+)$/i);
+    if (!tldMatch) return 9;
+    return keepaDomains[tldMatch[1].toLowerCase()] || 9;
+  } catch (e) {
+    return 9;
   }
 }
 
-if (browser.contextMenus) {
-  browser.contextMenus.create({
-	id: "watch-on-keepa",
-    title: "Watch on Keepa (&K)",
-    icons: {
-      "16": "icon.svg",
-      "32": "icon.svg"
-    },
-    contexts: ["page", "selection", "image", "link"],
-    documentUrlPatterns: [
-      "*://*.amazon.com/*",
-      "*://*.amazon.co.uk/*",
-      "*://*.amazon.de/*",
-      "*://*.amazon.fr/*",
-      "*://*.amazon.co.jp/*",
-      "*://*.amazon.ca/*",
-      "*://*.amazon.it/*",
-      "*://*.amazon.es/*",
-      "*://*.amazon.in/*",
-      "*://*.amazon.com.mx/*",
-      "*://*.amazon.com.br/*",
-      "*://*.amazon.com.au/*",
-      "*://*.amazon.nl/*"
-    ]
-  });
+function openOnKeepa(tab, rawLinkUrl, fallbackText) {
+  const baseKeepa = "https://keepa.com/#!";
+  const targetUrl = rawLinkUrl || (tab && tab.url);
+  if (!targetUrl) return;
 
+  const asin = extractASIN(targetUrl);
+  const countryCode = getCountryCode(targetUrl);
+
+  let destinationUrl = null;
+  if (asin) {
+    destinationUrl = baseKeepa + "product/" + countryCode + "-" + asin;
+  } else if (fallbackText && fallbackText.trim().length > 0) {
+    destinationUrl = baseKeepa + "search/" + countryCode + "-" + encodeURIComponent(fallbackText.trim());
+  }
+
+  if (!destinationUrl) return;
+
+  const createProps = { url: destinationUrl };
+  if (tab && typeof tab.index === "number" && tab.index >= 0) {
+    createProps.index = tab.index + 1;
+  }
+  if (tab && typeof tab.id === "number" && tab.id !== browser.tabs.TAB_ID_NONE) {
+    createProps.openerTabId = tab.id;
+  }
+
+  browser.tabs.create(createProps);
+}
+
+browser.runtime.onInstalled.addListener(() => {
+  if (!browser.contextMenus) return;
+
+  browser.contextMenus.removeAll().then(() => {
+    browser.contextMenus.create({
+      id: "watch-on-keepa",
+      title: "Watch on Keepa (&K)",
+      icons: {
+        "16": "icon.svg",
+        "32": "icon.svg"
+      },
+      contexts: ["page", "selection", "image", "link"],
+      documentUrlPatterns: amazonPatterns
+    });
+  });
+});
+
+if (browser.contextMenus) {
   browser.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === "watch-on-keepa") {
-      openOnKeepa(tab, info.linkUrl, info.selectionText || info.linkText);
+      const fallback = info.selectionText || info.linkText;
+      const sourceUrl = info.linkUrl || info.pageUrl || (tab && tab.url);
+      openOnKeepa(tab, sourceUrl, fallback);
     }
   });
 }
 
-browser.browserAction.onClicked.addListener((tab) => {
-  openOnKeepa(tab, null, null);
-});
+if (browser.browserAction) {
+  browser.browserAction.onClicked.addListener((tab) => {
+    openOnKeepa(tab, null, null);
+  });
+}
